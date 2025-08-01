@@ -3,36 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Brick Breaker</title>
+  <title>Brick Breaker: Jigsaw Edition</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: #111;
+      font-family: 'Courier New', monospace;
+      background: radial-gradient(circle, #000000, #111);
+      color: #ff1a1a;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       overflow: hidden;
-      font-family: sans-serif;
-      color: white;
     }
+
     canvas {
+      border: 4px solid #ff1a1a;
       background: #000;
-      border: 3px solid #00ffcc;
+      touch-action: none;
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 18px;
+      color: #ff1a1a;
+      z-index: 1;
+      text-shadow: 0 0 10px #ff1a1a;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+      color: #ff1a1a;
+      text-align: center;
+    }
+
+    #overlay h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #ff1a1a;
+    }
+
+    #overlay button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #ff1a1a;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff1a1a;
+    }
+
+    #overlay button:hover {
+      background: #ff3333;
     }
   </style>
 </head>
 <body>
+
+  <div id="hud">Score: 0 | Lives: 3</div>
+
+  <div id="overlay">
+    <h1>“Do you want to play a game?”</h1>
+    <button onclick="startGame()">Start</button>
+  </div>
+
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const hud = document.getElementById("hud");
+    const overlay = document.getElementById("overlay");
+
+    let score = 0;
+    let lives = 3;
+    let gameRunning = false;
 
     const paddle = {
       height: 20,
       width: 120,
       x: canvas.width / 2 - 60,
-      speed: 7,
+      speed: 10,
       dx: 0
     };
 
@@ -55,8 +119,6 @@
       offsetLeft: 35
     };
 
-    let score = 0;
-
     const bricks = [];
     for (let c = 0; c < brick.columnCount; c++) {
       bricks[c] = [];
@@ -65,17 +127,27 @@
       }
     }
 
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height - 60;
+      ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+      ball.dy = -ball.speed;
+    }
+
     function drawPaddle() {
-      ctx.fillStyle = "#00ffcc";
+      ctx.fillStyle = "#ff1a1a";
       ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
     }
 
     function drawBall() {
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
-      ctx.fillStyle = "#ff3366";
+      ctx.fillStyle = "#ff0000";
+      ctx.shadowColor = "#ff0000";
+      ctx.shadowBlur = 10;
       ctx.fill();
       ctx.closePath();
+      ctx.shadowBlur = 0;
     }
 
     function drawBricks() {
@@ -86,17 +158,17 @@
             const brickY = r * (brick.height + brick.padding) + brick.offsetTop;
             b.x = brickX;
             b.y = brickY;
-            ctx.fillStyle = "#fff";
+            ctx.fillStyle = "#990000";
             ctx.fillRect(brickX, brickY, brick.width, brick.height);
+            ctx.strokeStyle = "#ff1a1a";
+            ctx.strokeRect(brickX, brickY, brick.width, brick.height);
           }
         });
       });
     }
 
-    function drawScore() {
-      ctx.font = "20px Arial";
-      ctx.fillStyle = "#00ffcc";
-      ctx.fillText(`Score: ${score}`, 10, 25);
+    function drawHUD() {
+      hud.textContent = `Score: ${score} | Lives: ${lives}`;
     }
 
     function movePaddle() {
@@ -109,13 +181,8 @@
       ball.x += ball.dx;
       ball.y += ball.dy;
 
-      if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) {
-        ball.dx *= -1;
-      }
-
-      if (ball.y - ball.size < 0) {
-        ball.dy *= -1;
-      }
+      if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) ball.dx *= -1;
+      if (ball.y - ball.size < 0) ball.dy *= -1;
 
       if (
         ball.x > paddle.x &&
@@ -143,8 +210,12 @@
       });
 
       if (ball.y + ball.size > canvas.height) {
-        alert("Game Over! Final Score: " + score);
-        document.location.reload();
+        lives--;
+        if (lives > 0) {
+          resetBall();
+        } else {
+          gameOver();
+        }
       }
     }
 
@@ -153,10 +224,11 @@
       drawPaddle();
       drawBall();
       drawBricks();
-      drawScore();
+      drawHUD();
     }
 
     function update() {
+      if (!gameRunning) return;
       movePaddle();
       moveBall();
       draw();
@@ -182,10 +254,31 @@
       }
     }
 
+    canvas.addEventListener("touchmove", function (e) {
+      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+      paddle.x = touchX - paddle.width / 2;
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+    });
+
+    function startGame() {
+      overlay.style.display = "none";
+      score = 0;
+      lives = 3;
+      gameRunning = true;
+      resetBall();
+      update();
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      overlay.querySelector("h1").textContent = "Game Over. You failed the test.";
+      overlay.querySelector("button").textContent = "Try Again";
+      overlay.style.display = "flex";
+    }
+
     document.addEventListener("keydown", keyDown);
     document.addEventListener("keyup", keyUp);
-
-    update();
   </script>
 </body>
 </html>
