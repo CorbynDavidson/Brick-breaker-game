@@ -6,22 +6,14 @@
   <title>Brick Breaker: Jigsaw Edition</title>
   <style>
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       font-family: 'Courier New', monospace;
       background: radial-gradient(circle, #000000, #111);
       color: #ff1a1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       overflow: hidden;
-    }
-
-    canvas {
-      border: 4px solid #ff1a1a;
-      background: #000;
+      height: 100%;
       touch-action: none;
     }
 
@@ -31,26 +23,28 @@
       left: 20px;
       font-size: 18px;
       color: #ff1a1a;
-      z-index: 1;
       text-shadow: 0 0 10px #ff1a1a;
+      z-index: 2;
     }
 
     #overlay {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: rgba(0,0,0,0.92);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 2;
+      z-index: 3;
       color: #ff1a1a;
       text-align: center;
     }
 
     #overlay h1 {
-      font-size: 2.5rem;
+      font-size: 2rem;
       margin-bottom: 20px;
       text-shadow: 0 0 10px #ff1a1a;
     }
@@ -66,20 +60,22 @@
       box-shadow: 0 0 10px #ff1a1a;
     }
 
-    #overlay button:hover {
-      background: #ff3333;
+    #gameCanvas {
+      display: block;
+      margin: auto;
+      background: #000;
+      border: 4px solid #ff1a1a;
+      touch-action: none;
     }
   </style>
 </head>
 <body>
 
   <div id="hud">Score: 0 | Lives: 3</div>
-
   <div id="overlay">
     <h1>“Do you want to play a game?”</h1>
     <button onclick="startGame()">Start</button>
   </div>
-
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script>
@@ -102,7 +98,7 @@
 
     const ball = {
       x: canvas.width / 2,
-      y: canvas.height - 40,
+      y: canvas.height - 60,
       size: 10,
       speed: 5,
       dx: 5,
@@ -119,19 +115,23 @@
       offsetLeft: 35
     };
 
-    const bricks = [];
-    for (let c = 0; c < brick.columnCount; c++) {
-      bricks[c] = [];
-      for (let r = 0; r < brick.rowCount; r++) {
-        bricks[c][r] = { x: 0, y: 0, visible: true };
+    let bricks = [];
+
+    function initBricks() {
+      bricks = [];
+      for (let c = 0; c < brick.columnCount; c++) {
+        bricks[c] = [];
+        for (let r = 0; r < brick.rowCount; r++) {
+          bricks[c][r] = { x: 0, y: 0, visible: true };
+        }
       }
     }
 
     function resetBall() {
       ball.x = canvas.width / 2;
       ball.y = canvas.height - 60;
-      ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
-      ball.dy = -ball.speed;
+      ball.dx = 5 * (Math.random() > 0.5 ? 1 : -1);
+      ball.dy = -5;
     }
 
     function drawPaddle() {
@@ -235,41 +235,6 @@
       requestAnimationFrame(update);
     }
 
-    function keyDown(e) {
-      if (e.key === "ArrowRight" || e.key === "d") {
-        paddle.dx = paddle.speed;
-      } else if (e.key === "ArrowLeft" || e.key === "a") {
-        paddle.dx = -paddle.speed;
-      }
-    }
-
-    function keyUp(e) {
-      if (
-        e.key === "ArrowRight" ||
-        e.key === "ArrowLeft" ||
-        e.key === "a" ||
-        e.key === "d"
-      ) {
-        paddle.dx = 0;
-      }
-    }
-
-    canvas.addEventListener("touchmove", function (e) {
-      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
-      paddle.x = touchX - paddle.width / 2;
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-    });
-
-    function startGame() {
-      overlay.style.display = "none";
-      score = 0;
-      lives = 3;
-      gameRunning = true;
-      resetBall();
-      update();
-    }
-
     function gameOver() {
       gameRunning = false;
       overlay.querySelector("h1").textContent = "Game Over. You failed the test.";
@@ -277,8 +242,39 @@
       overlay.style.display = "flex";
     }
 
-    document.addEventListener("keydown", keyDown);
-    document.addEventListener("keyup", keyUp);
+    function startGame() {
+      initBricks();
+      score = 0;
+      lives = 3;
+      resetBall();
+      paddle.x = canvas.width / 2 - paddle.width / 2;
+      overlay.style.display = "none";
+      gameRunning = true;
+      update();
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight" || e.key === "d") {
+        paddle.dx = paddle.speed;
+      } else if (e.key === "ArrowLeft" || e.key === "a") {
+        paddle.dx = -paddle.speed;
+      }
+    });
+
+    document.addEventListener("keyup", e => {
+      if (["ArrowRight", "ArrowLeft", "a", "d"].includes(e.key)) {
+        paddle.dx = 0;
+      }
+    });
+
+    // ✅ TOUCH CONTROL
+    canvas.addEventListener("touchmove", function (e) {
+      const rect = canvas.getBoundingClientRect();
+      const touchX = e.touches[0].clientX - rect.left;
+      paddle.x = touchX - paddle.width / 2;
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+    });
   </script>
 </body>
 </html>
