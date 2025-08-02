@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Jigsaw Brick Breaker</title>
   <style>
@@ -109,13 +109,15 @@
     };
 
     let bricks = [];
+    let powerUps = [];
 
     function initBricks() {
       bricks = [];
       for (let c = 0; c < brick.columnCount; c++) {
         bricks[c] = [];
         for (let r = 0; r < brick.rowCount; r++) {
-          bricks[c][r] = { x: 0, y: 0, visible: true };
+          const hasPowerUp = Math.random() < 0.2;
+          bricks[c][r] = { x: 0, y: 0, visible: true, powerUp: hasPowerUp };
         }
       }
     }
@@ -151,12 +153,19 @@
             const brickY = r * (brick.height + brick.padding) + brick.offsetTop;
             b.x = brickX;
             b.y = brickY;
-            ctx.fillStyle = "#990000";
+            ctx.fillStyle = b.powerUp ? "#ffcc00" : "#990000";
             ctx.fillRect(brickX, brickY, brick.width, brick.height);
             ctx.strokeStyle = "#ff1a1a";
             ctx.strokeRect(brickX, brickY, brick.width, brick.height);
           }
         });
+      });
+    }
+
+    function drawPowerUps() {
+      powerUps.forEach(p => {
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(p.x, p.y, 10, 10);
       });
     }
 
@@ -169,6 +178,7 @@
       drawPaddle();
       drawBall();
       drawBricks();
+      drawPowerUps();
       drawHUD();
     }
 
@@ -205,6 +215,9 @@
               ball.dy *= -1;
               b.visible = false;
               score++;
+              if (b.powerUp) {
+                powerUps.push({ x: b.x + brick.width / 2, y: b.y });
+              }
             }
           }
         });
@@ -220,10 +233,26 @@
       }
     }
 
+    function movePowerUps() {
+      powerUps.forEach((p, i) => {
+        p.y += 2;
+        if (p.y > canvas.height) powerUps.splice(i, 1);
+        else if (
+          p.y > canvas.height - paddle.height - 10 &&
+          p.x > paddle.x &&
+          p.x < paddle.x + paddle.width
+        ) {
+          paddle.width += 20;
+          powerUps.splice(i, 1);
+        }
+      });
+    }
+
     function update() {
       if (!gameRunning) return;
       movePaddle();
       moveBall();
+      movePowerUps();
       draw();
       requestAnimationFrame(update);
     }
@@ -242,6 +271,7 @@
       paddle.width = 70;
       resetBall();
       paddle.x = canvas.width / 2 - paddle.width / 2;
+      powerUps = [];
       overlay.style.display = "none";
       gameRunning = true;
       update();
