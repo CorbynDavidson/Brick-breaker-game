@@ -2,32 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Brick Breaker: Jigsaw Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jigsaw Brick Breaker</title>
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      background: radial-gradient(circle, #000000, #111);
       font-family: 'Courier New', monospace;
+      background: radial-gradient(circle, #000000, #111);
       color: #ff1a1a;
-      height: 100%;
-      overflow: hidden;
-      touch-action: none;
+      overflow-x: hidden;
     }
 
     #hud {
-      position: absolute;
-      top: 10px;
-      left: 15px;
       font-size: 16px;
       color: #ff1a1a;
-      z-index: 2;
+      padding: 10px 15px;
       text-shadow: 0 0 8px #ff1a1a;
     }
 
     #overlay {
-      position: absolute;
+      position: fixed;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
@@ -36,14 +30,14 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 3;
+      z-index: 10;
       color: #ff1a1a;
       text-align: center;
       padding: 20px;
     }
 
     #overlay h1 {
-      font-size: 2rem;
+      font-size: 1.8rem;
       margin-bottom: 20px;
       text-shadow: 0 0 10px #ff1a1a;
     }
@@ -59,26 +53,32 @@
       box-shadow: 0 0 10px #ff1a1a;
     }
 
-    #gameCanvas {
-      display: block;
-      margin: auto;
+    #canvas-container {
+      width: 100%;
+      overflow-x: auto;
+      text-align: center;
+      padding-bottom: 50px;
+    }
+
+    canvas {
       background: #000;
       border: 4px solid #ff1a1a;
-      width: 100vw;
-      height: 100vh;
-      max-width: 100%;
-      max-height: 100%;
+      max-width: none;
     }
   </style>
 </head>
 <body>
 
   <div id="hud">Score: 0 | Lives: 3</div>
+
   <div id="overlay">
     <h1>“Do you want to play a game?”</h1>
     <button onclick="startGame()">Start</button>
   </div>
-  <canvas id="gameCanvas" width="360" height="640"></canvas>
+
+  <div id="canvas-container">
+    <canvas id="gameCanvas" width="720" height="640"></canvas>
+  </div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -91,9 +91,9 @@
     let gameRunning = false;
 
     const paddle = {
-      height: 12,
-      width: 80,
-      x: canvas.width / 2 - 40,
+      height: 14,
+      width: 100,
+      x: canvas.width / 2 - 50,
       speed: 8,
       dx: 0
     };
@@ -101,7 +101,7 @@
     const ball = {
       x: canvas.width / 2,
       y: canvas.height - 60,
-      size: 5,
+      size: 6,
       speed: 4,
       dx: 4,
       dy: -4
@@ -109,12 +109,12 @@
 
     const brick = {
       rowCount: 8,
-      columnCount: 14,
-      width: 20,
-      height: 10,
+      columnCount: 16,
+      width: 40,
+      height: 12,
       padding: 4,
       offsetTop: 40,
-      offsetLeft: 5
+      offsetLeft: 10
     };
 
     let bricks = [];
@@ -138,7 +138,7 @@
 
     function drawPaddle() {
       ctx.fillStyle = "#ff1a1a";
-      ctx.fillRect(paddle.x, canvas.height - paddle.height - 8, paddle.width, paddle.height);
+      ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
     }
 
     function drawBall() {
@@ -189,7 +189,7 @@
       if (
         ball.x > paddle.x &&
         ball.x < paddle.x + paddle.width &&
-        ball.y + ball.size > canvas.height - paddle.height - 8
+        ball.y + ball.size > canvas.height - paddle.height - 10
       ) {
         ball.dy = -ball.speed;
       }
