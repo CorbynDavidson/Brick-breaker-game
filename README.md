@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Jigsaw Brick Breaker</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       font-family: 'Courier New', monospace;
       background: radial-gradient(circle, #000000, #111);
       color: #ff1a1a;
+      height: 100%;
       overflow-x: hidden;
+      touch-action: none;
     }
 
     #hud {
@@ -18,6 +21,7 @@
       color: #ff1a1a;
       padding: 10px 15px;
       text-shadow: 0 0 8px #ff1a1a;
+      text-align: center;
     }
 
     #overlay {
@@ -53,32 +57,25 @@
       box-shadow: 0 0 10px #ff1a1a;
     }
 
-    #canvas-container {
-      width: 100%;
-      overflow-x: auto;
-      text-align: center;
-      padding-bottom: 50px;
-    }
-
     canvas {
-      background: #000;
+      display: block;
+      width: 100vw;
+      height: auto;
       border: 4px solid #ff1a1a;
-      max-width: none;
+      background: #000;
+      margin: 0 auto 50px;
     }
   </style>
 </head>
 <body>
 
   <div id="hud">Score: 0 | Lives: 3</div>
-
   <div id="overlay">
     <h1>“Do you want to play a game?”</h1>
     <button onclick="startGame()">Start</button>
   </div>
 
-  <div id="canvas-container">
-    <canvas id="gameCanvas" width="720" height="640"></canvas>
-  </div>
+  <canvas id="gameCanvas" width="360" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -91,30 +88,30 @@
     let gameRunning = false;
 
     const paddle = {
-      height: 14,
-      width: 100,
-      x: canvas.width / 2 - 50,
-      speed: 8,
+      height: 12,
+      width: 80,
+      x: canvas.width / 2 - 40,
+      speed: 7,
       dx: 0
     };
 
     const ball = {
       x: canvas.width / 2,
       y: canvas.height - 60,
-      size: 6,
+      size: 5,
       speed: 4,
       dx: 4,
       dy: -4
     };
 
     const brick = {
-      rowCount: 8,
-      columnCount: 16,
-      width: 40,
+      rowCount: 6,
+      columnCount: 10,
+      width: 30,
       height: 12,
-      padding: 4,
+      padding: 5,
       offsetTop: 40,
-      offsetLeft: 10
+      offsetLeft: 15
     };
 
     let bricks = [];
