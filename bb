@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Brick Breaker: Jigsaw Edition</title>
+  <title>Jigsaw Brick Breaker</title>
   <style>
     html, body {
       margin: 0;
@@ -11,23 +11,22 @@
       background: radial-gradient(circle, #000000, #111);
       font-family: 'Courier New', monospace;
       color: #ff1a1a;
-      height: 100%;
-      overflow: hidden;
+      height: 100vh;
+      overflow-y: hidden;
+      overflow-x: auto;
       touch-action: none;
     }
 
     #hud {
-      position: absolute;
-      top: 10px;
-      left: 15px;
       font-size: 16px;
       color: #ff1a1a;
-      z-index: 2;
+      padding: 10px 15px;
       text-shadow: 0 0 8px #ff1a1a;
+      text-align: left;
     }
 
     #overlay {
-      position: absolute;
+      position: fixed;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
@@ -36,14 +35,14 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 3;
+      z-index: 10;
       color: #ff1a1a;
       text-align: center;
       padding: 20px;
     }
 
     #overlay h1 {
-      font-size: 2rem;
+      font-size: 1.8rem;
       margin-bottom: 20px;
       text-shadow: 0 0 10px #ff1a1a;
     }
@@ -59,15 +58,11 @@
       box-shadow: 0 0 10px #ff1a1a;
     }
 
-    #gameCanvas {
-      display: block;
-      margin: auto;
+    canvas {
       background: #000;
       border: 4px solid #ff1a1a;
-      width: 100vw;
-      height: 100vh;
-      max-width: 100%;
-      max-height: 100%;
+      display: block;
+      margin: auto;
     }
   </style>
 </head>
@@ -78,7 +73,8 @@
     <h1>“Do you want to play a game?”</h1>
     <button onclick="startGame()">Start</button>
   </div>
-  <canvas id="gameCanvas" width="360" height="640"></canvas>
+
+  <canvas id="gameCanvas" width="1000" height="600"></canvas>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -91,9 +87,9 @@
     let gameRunning = false;
 
     const paddle = {
-      height: 12,
-      width: 80,
-      x: canvas.width / 2 - 40,
+      height: 14,
+      width: 100,
+      x: canvas.width / 2 - 50,
       speed: 8,
       dx: 0
     };
@@ -101,20 +97,20 @@
     const ball = {
       x: canvas.width / 2,
       y: canvas.height - 60,
-      size: 5,
+      size: 6,
       speed: 4,
       dx: 4,
       dy: -4
     };
 
     const brick = {
-      rowCount: 8,
-      columnCount: 14,
-      width: 20,
-      height: 10,
-      padding: 4,
+      rowCount: 6,
+      columnCount: 18,
+      width: 44,
+      height: 14,
+      padding: 5,
       offsetTop: 40,
-      offsetLeft: 5
+      offsetLeft: 15
     };
 
     let bricks = [];
@@ -138,7 +134,7 @@
 
     function drawPaddle() {
       ctx.fillStyle = "#ff1a1a";
-      ctx.fillRect(paddle.x, canvas.height - paddle.height - 8, paddle.width, paddle.height);
+      ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
     }
 
     function drawBall() {
@@ -189,7 +185,7 @@
       if (
         ball.x > paddle.x &&
         ball.x < paddle.x + paddle.width &&
-        ball.y + ball.size > canvas.height - paddle.height - 8
+        ball.y + ball.size > canvas.height - paddle.height - 10
       ) {
         ball.dy = -ball.speed;
       }
