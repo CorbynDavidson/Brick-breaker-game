@@ -1,0 +1,54 @@
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPaddle();
+  drawBalls();
+  drawBricks();
+  drawHUD();
+}
+
+function update() {
+  if (!gameRunning) return;
+  movePaddle();
+  moveBalls();
+  draw();
+  requestAnimationFrame(update);
+}
+
+function gameOver() {
+  gameRunning = false;
+  overlay.querySelector("h1").textContent = "Game Over. You failed the test.";
+  overlay.querySelector("button").textContent = "Try Again";
+  overlay.style.display = "flex";
+}
+
+function startGame() {
+  initBricks();
+  score = 0;
+  lives = 3;
+  paddle.width = 70;
+  resetBall();
+  paddle.x = canvas.width / 2 - paddle.width / 2;
+  overlay.style.display = "none";
+  gameRunning = true;
+  update();
+}
+
+// KEYBOARD CONTROLS
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "d") paddle.dx = paddle.speed;
+  else if (e.key === "ArrowLeft" || e.key === "a") paddle.dx = -paddle.speed;
+});
+
+document.addEventListener("keyup", e => {
+  if (["ArrowRight", "ArrowLeft", "a", "d"].includes(e.key)) paddle.dx = 0;
+});
+
+// TOUCH CONTROLS
+canvas.addEventListener("touchmove", e => {
+  const rect = canvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  paddle.x = touchX - paddle.width / 2;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+});
+</script>
