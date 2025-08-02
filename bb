@@ -2,35 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Brick Breaker: Jigsaw Edition</title>
   <style>
-    * { box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
-      font-family: 'Courier New', monospace;
       background: radial-gradient(circle, #000000, #111);
+      font-family: 'Courier New', monospace;
       color: #ff1a1a;
-      overflow: hidden;
       height: 100%;
+      overflow: hidden;
       touch-action: none;
     }
 
     #hud {
       position: absolute;
       top: 10px;
-      left: 20px;
-      font-size: 18px;
+      left: 15px;
+      font-size: 16px;
       color: #ff1a1a;
-      text-shadow: 0 0 10px #ff1a1a;
       z-index: 2;
+      text-shadow: 0 0 8px #ff1a1a;
     }
 
     #overlay {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.92);
@@ -41,6 +39,7 @@
       z-index: 3;
       color: #ff1a1a;
       text-align: center;
+      padding: 20px;
     }
 
     #overlay h1 {
@@ -50,7 +49,7 @@
     }
 
     #overlay button {
-      padding: 10px 20px;
+      padding: 12px 24px;
       font-size: 18px;
       background: #ff1a1a;
       color: black;
@@ -65,7 +64,10 @@
       margin: auto;
       background: #000;
       border: 4px solid #ff1a1a;
-      touch-action: none;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100%;
+      max-height: 100%;
     }
   </style>
 </head>
@@ -76,7 +78,7 @@
     <h1>“Do you want to play a game?”</h1>
     <button onclick="startGame()">Start</button>
   </div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas" width="360" height="640"></canvas>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -89,30 +91,30 @@
     let gameRunning = false;
 
     const paddle = {
-      height: 20,
-      width: 120,
-      x: canvas.width / 2 - 60,
-      speed: 10,
+      height: 12,
+      width: 80,
+      x: canvas.width / 2 - 40,
+      speed: 8,
       dx: 0
     };
 
     const ball = {
       x: canvas.width / 2,
       y: canvas.height - 60,
-      size: 10,
-      speed: 5,
-      dx: 5,
-      dy: -5
+      size: 5,
+      speed: 4,
+      dx: 4,
+      dy: -4
     };
 
     const brick = {
-      rowCount: 5,
-      columnCount: 9,
-      width: 70,
-      height: 20,
-      padding: 10,
+      rowCount: 8,
+      columnCount: 14,
+      width: 20,
+      height: 10,
+      padding: 4,
       offsetTop: 40,
-      offsetLeft: 35
+      offsetLeft: 5
     };
 
     let bricks = [];
@@ -130,13 +132,13 @@
     function resetBall() {
       ball.x = canvas.width / 2;
       ball.y = canvas.height - 60;
-      ball.dx = 5 * (Math.random() > 0.5 ? 1 : -1);
-      ball.dy = -5;
+      ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+      ball.dy = -ball.speed;
     }
 
     function drawPaddle() {
       ctx.fillStyle = "#ff1a1a";
-      ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
+      ctx.fillRect(paddle.x, canvas.height - paddle.height - 8, paddle.width, paddle.height);
     }
 
     function drawBall() {
@@ -144,7 +146,7 @@
       ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
       ctx.fillStyle = "#ff0000";
       ctx.shadowColor = "#ff0000";
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 8;
       ctx.fill();
       ctx.closePath();
       ctx.shadowBlur = 0;
@@ -187,7 +189,7 @@
       if (
         ball.x > paddle.x &&
         ball.x < paddle.x + paddle.width &&
-        ball.y + ball.size > canvas.height - paddle.height - 10
+        ball.y + ball.size > canvas.height - paddle.height - 8
       ) {
         ball.dy = -ball.speed;
       }
@@ -254,21 +256,15 @@
     }
 
     document.addEventListener("keydown", e => {
-      if (e.key === "ArrowRight" || e.key === "d") {
-        paddle.dx = paddle.speed;
-      } else if (e.key === "ArrowLeft" || e.key === "a") {
-        paddle.dx = -paddle.speed;
-      }
+      if (e.key === "ArrowRight" || e.key === "d") paddle.dx = paddle.speed;
+      else if (e.key === "ArrowLeft" || e.key === "a") paddle.dx = -paddle.speed;
     });
 
     document.addEventListener("keyup", e => {
-      if (["ArrowRight", "ArrowLeft", "a", "d"].includes(e.key)) {
-        paddle.dx = 0;
-      }
+      if (["ArrowRight", "ArrowLeft", "a", "d"].includes(e.key)) paddle.dx = 0;
     });
 
-    // ✅ TOUCH CONTROL
-    canvas.addEventListener("touchmove", function (e) {
+    canvas.addEventListener("touchmove", e => {
       const rect = canvas.getBoundingClientRect();
       const touchX = e.touches[0].clientX - rect.left;
       paddle.x = touchX - paddle.width / 2;
