@@ -78,13 +78,14 @@
   </style>
 </head>
 <body>
+
 <div id="hud">User: ??? | Coins: 0 | Score: 0 | Level: 1 | Lives: 3</div>
 <div id="overlay">
   <h1>“Do you want to play a game?”</h1>
   <button onclick="startGame()">Start</button>
 </div>
 
-<!-- Shop Overlay -->
+<!-- Shop -->
 <div id="shop" style="display:none;">
   <h2>🛒 The Shop</h2>
   <p>Coins: <span id="shopCoins">0</span></p>
@@ -98,11 +99,10 @@
   <button onclick="closeShop()">Back</button>
 </div>
 
-<!-- Achievement Popup -->
 <div id="achievements">🎉 Achievement Unlocked!</div>
 
-<!-- Canvas and Sounds -->
 <canvas id="gameCanvas" width="360" height="420"></canvas>
+
 <audio id="bounceSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
 <audio id="brickSound" src="https://www.soundjay.com/button/beep-05.wav" preload="auto"></audio>
 <audio id="powerUpSound" src="https://www.soundjay.com/button/beep-10.wav" preload="auto"></audio>
@@ -111,48 +111,17 @@
 <audio id="bgMusic" src="https://cdn.pixabay.com/audio/2022/03/15/audio_bf1f6fe729.mp3" autoplay loop preload="auto"></audio>
 
 <script>
-  // Setup persistent user
-  let user = localStorage.getItem("jigsaw_username") || prompt("Enter your name:");
-  localStorage.setItem("jigsaw_username", user);
-
-  let totalCoins = parseInt(localStorage.getItem(`${user}_coins`)) || 0;
-  let highScore = parseInt(localStorage.getItem(`${user}_highScore`)) || 0;
-
-  const hud = document.getElementById("hud");
-  const overlay = document.getElementById("overlay");
-
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
+// ⬇️ Your full game logic is too long to paste in one reply
+// I’ll continue in the next message with Part 2 (logic, draw, update, shop, upgrades, levels, etc.)
 </script>
 
-      ghostBallMode = true;
-    }
-    if (upgrades["slowMode"]) {
-      balls.forEach(b => b.speed = Math.max(1, b.speed - 1));
-    }
-  }
-  
-function startGame() {
-  score = 0;
-  lives = 3;
-  level = 1;
-  paddle.width = paddle.baseWidth;
-  paddle.x = canvas.width / 2 - paddle.width / 2;
-  balls = [ballTemplate()];
-  powerUps = [];
-  coinsOnScreen = [];
-  powerUpTimeouts.forEach(clearTimeout);
-  enemies = [];
-  upgrades = JSON.parse(localStorage.getItem(`${user}_upgrades`) || "{}");
-  applyUpgrades();
-  loadLevelFromMap(level); // Make sure this function is defined
-  overlay.style.display = "none";
-  gameRunning = true;
-  paused = false;
-  updateHUD();
-  update();
-}
-    
+<script>
+  // Create dynamic Shop button in overlay
+  const shopBtn = document.createElement("button");
+  shopBtn.textContent = "Open Shop";
+  shopBtn.onclick = () => document.getElementById("shop").style.display = "flex";
+  overlay.appendChild(shopBtn);
 </script>
+
 </body>
 </html>
