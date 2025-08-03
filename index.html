@@ -6,8 +6,7 @@
   <title>Jigsaw Brick Breaker</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Courier New', monospace;
       background: url('https://i.imgur.com/CIWh45n.jpeg') no-repeat center center fixed;
       background-size: cover;
@@ -16,43 +15,18 @@
       height: 100%;
       touch-action: none;
     }
-    #hud {
-      font-size: 14px;
-      color: #ff1a1a;
-      padding: 8px 12px;
-      text-shadow: 0 0 6px #ff1a1a;
-      text-align: center;
-    }
+    #hud { font-size: 14px; padding: 8px 12px; text-align: center; color: #ff1a1a; text-shadow: 0 0 6px #ff1a1a; }
     #overlay, #shop {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.92);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-      color: #ff1a1a;
-      text-align: center;
-      padding: 20px;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); display: flex;
+      flex-direction: column; justify-content: center; align-items: center;
+      z-index: 10; color: #ff1a1a; text-align: center; padding: 20px;
     }
-    #overlay h1 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      text-shadow: 0 0 8px #ff1a1a;
-    }
+    #overlay h1 { font-size: 1.5rem; margin-bottom: 15px; text-shadow: 0 0 8px #ff1a1a; }
     #overlay button, #shop button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #ff1a1a;
-      color: black;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      box-shadow: 0 0 8px #ff1a1a;
-      margin: 8px;
+      padding: 10px 20px; font-size: 16px; background: #ff1a1a;
+      color: black; border: none; border-radius: 4px;
+      cursor: pointer; box-shadow: 0 0 8px #ff1a1a; margin: 8px;
     }
     canvas {
       background: rgba(0, 0, 0, 0.85);
@@ -85,7 +59,6 @@
   <button onclick="startGame()">Start</button>
 </div>
 
-<!-- Shop -->
 <div id="shop" style="display:none;">
   <h2>🛒 The Shop</h2>
   <p>Coins: <span id="shopCoins">0</span></p>
@@ -100,7 +73,6 @@
 </div>
 
 <div id="achievements">🎉 Achievement Unlocked!</div>
-
 <canvas id="gameCanvas" width="360" height="420"></canvas>
 
 <audio id="bounceSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
@@ -111,16 +83,287 @@
 <audio id="bgMusic" src="https://cdn.pixabay.com/audio/2022/03/15/audio_bf1f6fe729.mp3" autoplay loop preload="auto"></audio>
 
 <script>
-// ⬇️ Your full game logic is too long to paste in one reply
-// I’ll continue in the next message with Part 2 (logic, draw, update, shop, upgrades, levels, etc.)
+let user = localStorage.getItem("jigsaw_username") || prompt("Enter your name:");
+localStorage.setItem("jigsaw_username", user);
+
+let totalCoins = parseInt(localStorage.getItem(`${user}_coins`)) || 0;
+let highScore = parseInt(localStorage.getItem(`${user}_highScore`)) || 0;
+let upgrades = JSON.parse(localStorage.getItem(`${user}_upgrades`) || "{}");
+let achievements = JSON.parse(localStorage.getItem(`${user}_achievements`) || "{}");
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const hud = document.getElementById("hud");
+const overlay = document.getElementById("overlay");
+
+const bounceSound = document.getElementById("bounceSound");
+const brickSound = document.getElementById("brickSound");
+const powerUpSound = document.getElementById("powerUpSound");
+const coinSound = document.getElementById("coinSound");
+const gameOverSound = document.getElementById("gameOverSound");
+
+// Game State
+let score = 0, lives = 3, level = 1, coins = totalCoins;
+let gameRunning = false, paused = false;
+let balls = [], bricks = [], powerUps = [], coinsOnScreen = [], enemies = [];
+let activePowerUps = [], powerUpTimeouts = [];
+
+const paddle = { height: 10, width: 70, baseWidth: 70, x: 0, speed: 6, dx: 0 };
+const ballTemplate = () => ({
+  x: canvas.width / 2,
+  y: canvas.height - 50,
+  size: 4,
+  speed: 3 + level * 0.3,
+  dx: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 2),
+  dy: -3
+});
+const brick = {
+  rowCount: 5, columnCount: 9, width: 30,
+  height: 10, padding: 4, offsetTop: 30, offsetLeft: 15
+};
+
+function initBricks() {
+  bricks = [];
+  for (let c = 0; c < brick.columnCount; c++) {
+    bricks[c] = [];
+    for (let r = 0; r < brick.rowCount; r++) {
+      const hasPowerUp = Math.random() < 0.25;
+      const powerType = hasPowerUp ? ["expand", "shrink", "multiball", "slow"][Math.floor(Math.random() * 4)] : null;
+      const dropsCoin = Math.random() < 0.3;
+      bricks[c][r] = { x: 0, y: 0, visible: true, powerUp: powerType, coin: dropsCoin };
+    }
+  }
+}
+
+function updateHUD() {
+  hud.textContent = `User: ${user} | Coins: ${coins} | Score: ${score} | Level: ${level} | Lives: ${lives}`;
+}
+function drawPaddle() {
+  ctx.fillStyle = paddle.skin === "saw" ? "#c41c1c" : "#ff1a1a";
+  ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
+}
+function drawBalls() {
+  balls.forEach(ball => {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
+    ctx.fillStyle = "#ff0000";
+    ctx.shadowColor = "#ff0000";
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.closePath();
+    ctx.shadowBlur = 0;
+  });
+}
+function drawBricks() {
+  bricks.forEach((col, c) => {
+    col.forEach((b, r) => {
+      if (b.visible) {
+        const x = c * (brick.width + brick.padding) + brick.offsetLeft;
+        const y = r * (brick.height + brick.padding) + brick.offsetTop;
+        b.x = x; b.y = y;
+        ctx.fillStyle = b.powerUp ? "#ffcc00" : "#990000";
+        ctx.fillRect(x, y, brick.width, brick.height);
+        ctx.strokeStyle = "#ff1a1a";
+        ctx.strokeRect(x, y, brick.width, brick.height);
+      }
+    });
+  });
+}
+function drawCoins() {
+  coinsOnScreen.forEach(c => {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffd700";
+    ctx.fill();
+    ctx.closePath();
+  });
+}
+function drawPowerUps() {
+  powerUps.forEach(p => {
+    ctx.fillStyle = "#00ff00";
+    ctx.fillRect(p.x, p.y, 10, 10);
+  });
+}
+function drawEnemies() {
+  enemies.forEach(e => {
+    ctx.beginPath();
+    ctx.fillStyle = "#a30000";
+    ctx.moveTo(e.x, e.y);
+    ctx.lineTo(e.x + 10, e.y + 20);
+    ctx.lineTo(e.x - 10, e.y + 20);
+    ctx.closePath();
+    ctx.fill();
+  });
+}
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPaddle();
+  drawBalls();
+  drawBricks();
+  drawPowerUps();
+  drawCoins();
+  drawEnemies();
+  updateHUD();
+}
+function movePaddle() {
+  paddle.x += paddle.dx;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+}
+function resetBall() {
+  balls = [ballTemplate()];
+}
+function moveBalls() {
+  balls.forEach((ball, i) => {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+    if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) ball.dx *= -1;
+    if (ball.y - ball.size < 0) ball.dy *= -1;
+    if (
+      ball.x > paddle.x && ball.x < paddle.x + paddle.width &&
+      ball.y + ball.size > canvas.height - paddle.height - 10
+    ) ball.dy = -ball.speed;
+    bricks.forEach(col => {
+      col.forEach(b => {
+        if (b.visible && ball.x > b.x && ball.x < b.x + brick.width &&
+            ball.y - ball.size < b.y + brick.height && ball.y + ball.size > b.y) {
+          ball.dy *= -1;
+          b.visible = false;
+          score += 10;
+          if (b.coin) coinsOnScreen.push({ x: b.x + brick.width / 2, y: b.y });
+          if (b.powerUp) powerUps.push({ x: b.x + brick.width / 2, y: b.y, type: b.powerUp });
+        }
+      });
+    });
+    if (ball.y > canvas.height) {
+      balls.splice(i, 1);
+      if (balls.length === 0) {
+        lives--;
+        lives > 0 ? resetBall() : gameOver();
+      }
+    }
+  });
+  if (bricks.flat().every(b => !b.visible)) {
+    level++;
+    resetBall();
+    initBricks();
+  }
+}
+function moveCoins() {
+  coinsOnScreen.forEach((coin, i) => {
+    coin.y += 2;
+    if (coin.y > canvas.height - paddle.height - 10 &&
+        coin.x > paddle.x && coin.x < paddle.x + paddle.width) {
+      coins++;
+      coinSound.play();
+      coinsOnScreen.splice(i, 1);
+      localStorage.setItem(`${user}_coins`, coins);
+    } else if (coin.y > canvas.height) coinsOnScreen.splice(i, 1);
+  });
+}
+function movePowerUps() {
+  powerUps.forEach((p, i) => {
+    p.y += 2;
+    if (p.y > canvas.height - paddle.height - 10 && p.x > paddle.x && p.x < paddle.x + paddle.width) {
+      activatePowerUp(p.type);
+      powerUps.splice(i, 1);
+    } else if (p.y > canvas.height) powerUps.splice(i, 1);
+  });
+}
+function activatePowerUp(type) {
+  if (type === "expand") paddle.width += 30;
+  if (type === "shrink") paddle.width = Math.max(30, paddle.width - 20);
+  if (type === "multiball") balls.push(ballTemplate());
+  if (type === "slow") balls.forEach(b => b.speed = Math.max(1, b.speed - 1));
+  scheduleReset(() => paddle.width = paddle.baseWidth);
+}
+function scheduleReset(fn) {
+  const timeout = setTimeout(fn, 15000);
+  powerUpTimeouts.push(timeout);
+}
+function startGame() {
+  score = 0; lives = 3; level = 1;
+  paddle.width = paddle.baseWidth;
+  paddle.x = canvas.width / 2 - paddle.width / 2;
+  balls = [ballTemplate()];
+  powerUps = []; coinsOnScreen = []; enemies = [];
+  upgrades = JSON.parse(localStorage.getItem(`${user}_upgrades`) || "{}");
+  powerUpTimeouts.forEach(clearTimeout);
+  applyUpgrades();
+  initBricks();
+  overlay.style.display = "none";
+  gameRunning = true;
+  paused = false;
+  updateHUD();
+  update();
+}
+function applyUpgrades() {
+  if (upgrades["multiball"]) balls.push(ballTemplate());
+  if (upgrades["extraLife"]) lives++;
+  if (upgrades["sawSkin"]) paddle.skin = "saw";
+}
+function gameOver() {
+  gameRunning = false;
+  gameOverSound.play();
+  overlay.querySelector("h1").textContent = "Game Over. You failed the test.";
+  overlay.style.display = "flex";
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem(`${user}_highScore`, highScore);
+  }
+}
+function update() {
+  if (!gameRunning || paused) return;
+  movePaddle();
+  moveBalls();
+  moveCoins();
+  movePowerUps();
+  draw();
+  requestAnimationFrame(update);
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "d") paddle.dx = paddle.speed;
+  else if (e.key === "ArrowLeft" || e.key === "a") paddle.dx = -paddle.speed;
+  else if (e.key === "p") paused = !paused;
+});
+document.addEventListener("keyup", e => {
+  if (["ArrowRight", "ArrowLeft", "a", "d"].includes(e.key)) paddle.dx = 0;
+});
+canvas.addEventListener("touchmove", e => {
+  const rect = canvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  paddle.x = touchX - paddle.width / 2;
+});
+function openShop() {
+  document.getElementById("shop").style.display = "block";
+  document.getElementById("shopCoins").textContent = coins;
+}
+function closeShop() {
+  document.getElementById("shop").style.display = "none";
+}
+function buy(item) {
+  const prices = {
+    multiball: 25, extraLife: 15, sawSkin: 50,
+    fireball: 100, doubleScore: 75, ghostBall: 60, slowMode: 30
+  };
+  if (coins >= prices[item]) {
+    coins -= prices[item];
+    upgrades[item] = true;
+    localStorage.setItem(`${user}_upgrades`, JSON.stringify(upgrades));
+    localStorage.setItem(`${user}_coins`, coins);
+    alert(`You bought: ${item}`);
+    closeShop();
+  } else alert("Not enough coins!");
+}
 </script>
 
 <script>
-  // Create dynamic Shop button in overlay
+document.addEventListener("DOMContentLoaded", () => {
   const shopBtn = document.createElement("button");
   shopBtn.textContent = "Open Shop";
-  shopBtn.onclick = () => document.getElementById("shop").style.display = "flex";
+  shopBtn.onclick = openShop;
   overlay.appendChild(shopBtn);
+});
 </script>
 
 </body>
