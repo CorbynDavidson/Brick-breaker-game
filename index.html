@@ -131,7 +131,28 @@
       balls.forEach(b => b.speed = Math.max(1, b.speed - 1));
     }
   }
+  
+function startGame() {
+  score = 0;
+  lives = 3;
+  level = 1;
+  paddle.width = paddle.baseWidth;
+  paddle.x = canvas.width / 2 - paddle.width / 2;
+  balls = [ballTemplate()];
+  powerUps = [];
+  coinsOnScreen = [];
+  powerUpTimeouts.forEach(clearTimeout);
+  enemies = [];
+  upgrades = JSON.parse(localStorage.getItem(`${user}_upgrades`) || "{}");
+  applyUpgrades();
+  loadLevelFromMap(level); // Make sure this function is defined
+  overlay.style.display = "none";
+  gameRunning = true;
+  paused = false;
+  updateHUD();
+  update();
+}
+    
 </script>
-
 </body>
 </html>
